@@ -17,23 +17,9 @@ const filename = "./data.json"
 func main() {
 	interruptHandler()
 
-	f, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE, 0755)
-	if err != nil {
-		panic(err)
-	}
-	defer f.Close()
+	data := initializeDiskStorage(filename)
 
-	data, err := ioutil.ReadAll(f)
-	if err != nil {
-		panic(err)
-	}
-
-	var store map[string]string
-	if len(data) > 0 {
-		json.Unmarshal(data, &store)
-	} else {
-		store = make(map[string]string)
-	}
+	store := initializeMemStore(data)
 
 	for {
 		fmt.Printf("> ")
@@ -67,9 +53,9 @@ func main() {
 
 			store[key] = value
 
-			serializedData, _ := json.Marshal(store)
+			marshalledData, _ := json.Marshal(store)
 
-			_, writeErr := writeFile.Write(serializedData)
+			_, writeErr := writeFile.Write(marshalledData)
 			if writeErr != nil {
 				panic(writeErr)
 			}
@@ -91,4 +77,31 @@ func interruptHandler() {
 		fmt.Println("Exiting")
 		os.Exit(0)
 	}()
+}
+
+func initializeDiskStorage(filename string) []byte {
+	f, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE, 0755)
+	if err != nil {
+		panic(err)
+	}
+	defer f.Close()
+
+	data, err := ioutil.ReadAll(f)
+	if err != nil {
+		panic(err)
+	}
+
+	return data
+}
+
+func initializeMemStore(data []byte) map[string]string {
+	var store map[string]string
+
+	if len(data) > 0 {
+		json.Unmarshal(data, &store)
+	} else {
+		store = make(map[string]string)
+	}
+
+	return store
 }
